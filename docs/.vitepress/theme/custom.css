@@ -38,24 +38,79 @@ html {
   --vp-home-hero-image-background-image: linear-gradient(-45deg, #00ffcc 50%, #38bdf8 50%);
 }
 
-/* ===== 深度美化：首页大标题发光 ===== */
-.dark .VPHero .name {
-  text-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+/* ===== 粒子背景容器样式 ===== */
+#particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.4;
 }
 
-/* ===== 深度美化：特性卡片 毛玻璃 + 悬浮发光效果 ===== */
+.dark #particles-bg {
+  opacity: 0.6;
+}
+
+/* ===== 深度美化：首页大标题发光与排版 ===== */
+.VPHero .name {
+  font-size: clamp(3rem, 6vw, 5rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em;
+  line-height: 1.1 !important;
+}
+
+.VPHero .text {
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  font-weight: 700 !important;
+  margin-top: 0.5rem !important;
+}
+
+.VPHero .tagline {
+  font-size: clamp(1.1rem, 2vw, 1.5rem) !important;
+  margin-top: 1rem !important;
+  opacity: 0.8;
+}
+
+.dark .VPHero .name {
+  text-shadow: 0 0 40px rgba(56, 189, 248, 0.5);
+}
+
+/* ===== 深度美化：特性卡片 高级动效 ===== */
 .VPFeature {
   background: var(--vp-c-bg-alt) !important;
   border: 1px solid var(--vp-c-divider);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border-radius: 16px;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性动效 */
+  border-radius: 20px;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* 卡片悬停光晕伪元素 */
+.VPFeature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 0%, var(--vp-c-brand-soft) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
 }
 
 .VPFeature:hover {
   border-color: var(--vp-c-brand-1);
-  box-shadow: 0 12px 30px -10px var(--vp-c-brand-soft);
-  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px var(--vp-c-brand-soft);
+  transform: translateY(-8px) scale(1.02);
+}
+
+.VPFeature:hover::before {
+  opacity: 1;
 }
 
 /* 暗色模式下卡片更强的发光效果 */
@@ -68,7 +123,7 @@ html {
 
 .dark .VPFeature:hover {
   border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 15px 35px -10px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(56, 189, 248, 0.25);
 }
 
 /* ===== 深度美化：代码块背景与边框 ===== */
@@ -112,16 +167,55 @@ div[class*="language-"]:hover {
   background: var(--vp-c-brand-1);
 }
 
-/* ===== 深度美化：按钮动效 ===== */
+/* ===== 深度美化：按钮高级动效 ===== */
+.VPButton {
+  border-radius: 30px !important;
+  padding: 0 24px !important;
+  line-height: 44px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  position: relative;
+  overflow: hidden;
+}
+
 .VPButton.brand {
-  box-shadow: 0 4px 14px 0 var(--vp-c-brand-soft);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border-radius: 20px;
+  box-shadow: 0 8px 20px -6px var(--vp-c-brand-1);
 }
 
 .VPButton.brand:hover {
-  box-shadow: 0 6px 20px var(--vp-c-brand-soft);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px var(--vp-c-brand-1);
+  transform: translateY(-3px) scale(1.05);
+}
+
+/* 按钮点击波纹效果 */
+.VPButton::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.VPButton:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0) translate(-50%, -50%);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(40) translate(-50%, -50%);
+    opacity: 0;
+  }
 }
 
 /* ===== 深度美化：文章排版与间距优化 ===== */
@@ -185,7 +279,7 @@ div[class*="language-"]:hover {
   background-color: rgba(15, 17, 21, 0.8) !important;
 }
 
-/* 页面过渡动画 */
+/* 页面过渡动画与首页级联动画 */
 .VPContent {
   animation: fade-in-up 0.5s ease-out forwards;
 }
@@ -194,6 +288,17 @@ div[class*="language-"]:hover {
   0% {
     opacity: 0;
     transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes staggerFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
   }
   100% {
     opacity: 1;

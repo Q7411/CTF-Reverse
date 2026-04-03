@@ -5,14 +5,17 @@ import mediumZoom from 'medium-zoom'
 import Comments from './components/Comments.vue'
 import ReadingProgress from './components/ReadingProgress.vue'
 import Share from './components/Share.vue'
+import Particles from './components/Particles.vue'
 import './custom.css'
 
 export default {
   extends: DefaultTheme,
   Layout: () => {
     // 注入页面顶部的阅读进度条和底部的分享、评论组件
+    // layout-bottom 注入粒子背景
     return h(DefaultTheme.Layout, null, {
       'layout-top': () => h(ReadingProgress),
+      'layout-bottom': () => h(Particles),
       'doc-after': () => h('div', [h(Share), h(Comments)])
     })
   },
@@ -73,13 +76,34 @@ export default {
         }
       };
 
+      // 3. 首页元素级联入场动画
+      const initStaggeredEntrance = () => {
+        const elements = document.querySelectorAll('.VPHero .text, .VPHero .tagline, .VPHero .actions, .VPFeatures .VPFeature');
+        elements.forEach((el, index) => {
+          if (!el.classList.contains('stagger-animated')) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.animation = `staggerFadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`;
+            // 计算级联延迟，基础延迟 + 每个元素的递增延迟
+            el.style.animationDelay = `${0.3 + index * 0.1}s`;
+            el.classList.add('stagger-animated');
+          }
+        });
+      };
+
       // 首次加载触发文字动画
-      setTimeout(initTextAnimation, 100);
+      setTimeout(() => {
+        initTextAnimation();
+        initStaggeredEntrance();
+      }, 100);
 
       // 路由切换回首页时触发文字动画
       router.onAfterRouteChanged = (to) => {
         if (to === '/') {
-          setTimeout(initTextAnimation, 100);
+          setTimeout(() => {
+            initTextAnimation();
+            initStaggeredEntrance();
+          }, 100);
         }
       };
 
