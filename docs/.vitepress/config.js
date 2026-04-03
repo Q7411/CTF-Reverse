@@ -10,6 +10,13 @@ export default defineConfig({
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
     ['link', { href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap', rel: 'stylesheet' }]
   ],
+  markdown: {
+    image: {
+      // 开启图片懒加载
+      lazyLoading: true
+    },
+    lineNumbers: true // 开启代码行号
+  },
   themeConfig: {
     siteTitle: 'Q7411 | CTF-Reverse',
     logo: null, // 可以配置一个 Logo
@@ -37,15 +44,23 @@ export default defineConfig({
       { text: '🏠 首页', link: '/' },
       { text: '📝 博客文章', link: '/posts/first-post', activeMatch: '/posts/' },
       { text: '🎯 逆向工程', link: '/CTF-Reverse/BASE64', activeMatch: '/CTF-Reverse/' },
+      { text: '🏷️ 标签云', link: '/tags' },
       { text: '🙋‍♂️ 关于我', link: '/about' }
     ],
     sidebar: {
       '/posts/': [
         {
-          text: '📝 博客文章',
+          text: '🚀 最新文章',
           collapsed: false,
           items: [
             { text: '第一篇文章', link: '/posts/first-post' }
+          ]
+        },
+        {
+          text: '🏷️ 快速导航',
+          collapsed: false,
+          items: [
+            { text: '标签云', link: '/tags' }
           ]
         }
       ],
@@ -55,6 +70,13 @@ export default defineConfig({
           collapsed: false,
           items: [
             { text: 'BASE64 加密原理与逆向', link: '/CTF-Reverse/BASE64' }
+          ]
+        },
+        {
+          text: '🏷️ 快速导航',
+          collapsed: false,
+          items: [
+            { text: '标签云', link: '/tags' }
           ]
         }
       ]

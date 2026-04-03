@@ -19,6 +19,11 @@
   --vp-home-hero-image-filter: blur(75px);
 }
 
+html {
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+}
+
 /* 深色模式特定颜色 */
 .dark {
   --vp-c-brand-1: #38bdf8;
@@ -119,31 +124,28 @@ div[class*="language-"]:hover {
   transform: translateY(-2px);
 }
 
-/* ===== 深度美化：文章排版优化 ===== */
+/* ===== 深度美化：文章排版与间距优化 ===== */
 .vp-doc h1, .vp-doc h2, .vp-doc h3, .vp-doc h4, .vp-doc h5, .vp-doc h6 {
   font-weight: 600;
   letter-spacing: -0.02em;
+  margin-top: 2.5rem;
+}
+
+.vp-doc h1 {
+  font-size: 2.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .vp-doc h2 {
   border-bottom: 2px solid var(--vp-c-divider);
   padding-bottom: 0.5rem;
-  margin-top: 3rem;
-}
-
-.vp-doc a {
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s ease;
-}
-
-.vp-doc a:hover {
-  border-bottom-color: var(--vp-c-brand-1);
+  margin-top: 3.5rem;
 }
 
 .vp-doc p, .vp-doc li {
-  line-height: 1.75;
+  line-height: 1.8;
   color: var(--vp-c-text-1);
+  margin-bottom: 1.25rem;
 }
 
 /* 引用块美化 */

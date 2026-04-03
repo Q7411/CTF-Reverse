@@ -1,10 +1,17 @@
 import DefaultTheme from 'vitepress/theme'
-import { onMounted, onUnmounted } from 'vue'
+import { h, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vitepress'
+import Comments from './components/Comments.vue'
 import './custom.css'
 
 export default {
   extends: DefaultTheme,
+  Layout: () => {
+    // 注入页面底部的评论组件
+    return h(DefaultTheme.Layout, null, {
+      'doc-after': () => h(Comments)
+    })
+  },
   setup() {
     const router = useRouter()
 
