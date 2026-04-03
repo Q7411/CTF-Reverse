@@ -309,8 +309,6 @@ const recentPosts = [
     <!-- CTA Section -->
     <section ref="ctaRef" class="cta-section">
       <div class="cta-content glass-card gpu-accel">
-        <h2 class="cta-title">准备好探索二进制的奥秘了吗？</h2>
-        <p class="cta-desc">跟随我一起深入 CTF 与逆向工程的世界，掌握底层安全技术。</p>
         <a href="/CTF-Reverse/BASE64" class="btn btn-primary cta-btn">开启极客之旅</a>
       </div>
     </section>
@@ -818,27 +816,11 @@ const recentPosts = [
 
 .cta-content {
   text-align: center;
-  padding: 80px 40px;
+  padding: 60px 40px;
   border-radius: 32px;
   background: linear-gradient(145deg, rgba(20, 20, 22, 0.8), rgba(10, 10, 11, 0.9)) !important;
   border: 1px solid rgba(212, 175, 55, 0.2) !important;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 80px rgba(212, 175, 55, 0.1) inset !important;
-}
-
-.cta-title {
-  font-size: clamp(2rem, 4vw, 2.5rem);
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 20px;
-}
-
-.cta-desc {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 40px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .cta-btn {
