@@ -144,7 +144,7 @@ const features = [
 <style scoped>
 .modern-home {
   width: 100%;
-  background-color: var(--vp-c-bg);
+  background-color: #0A0A0B; /* Force dark background */
   color: #fff;
   overflow: hidden;
 }
@@ -289,12 +289,15 @@ const features = [
   padding: 48px 32px;
   border-radius: 24px;
   transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: rgba(18, 18, 20, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
 }
 
 .feature-card:hover {
   transform: translateY(-10px) scale(1.02) !important;
-  border-color: rgba(212, 175, 55, 0.5);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(212, 175, 55, 0.15) inset;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(212, 175, 55, 0.15) inset !important;
 }
 
 .icon-wrapper {
