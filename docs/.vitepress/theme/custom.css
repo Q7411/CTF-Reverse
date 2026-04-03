@@ -11,10 +11,49 @@
   
   /* 首页背景光晕效果 */
   --vp-home-hero-image-background-image: linear-gradient(-45deg, #00ffcc 50%, #0099ff 50%);
-  --vp-home-hero-image-filter: blur(55px);
+  --vp-home-hero-image-filter: blur(70px);
 }
 
 /* 给暗黑模式下的主背景加深一点点，更适合黑客风格 */
 .dark {
-  --vp-c-bg: #161618;
+  --vp-c-bg: #09090b;       /* 极深的黑色背景 */
+  --vp-c-bg-alt: #111114;   /* 模块的深灰色背景 */
+}
+
+/* ===== 深度美化：首页大标题霓虹发光 ===== */
+.dark .VPHero .name {
+  text-shadow: 0 0 25px rgba(0, 255, 204, 0.4);
+}
+
+/* ===== 深度美化：特性卡片 毛玻璃 + 悬浮发光效果 ===== */
+.dark .VPFeature {
+  background: rgba(20, 20, 25, 0.6) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 204, 0.1);
+  transition: all 0.3s ease;
+  border-radius: 12px;
+}
+
+.dark .VPFeature:hover {
+  border-color: rgba(0, 255, 204, 0.5);
+  box-shadow: 0 10px 30px -10px rgba(0, 255, 204, 0.3);
+  transform: translateY(-5px);
+}
+
+/* ===== 深度美化：代码块背景与边框 ===== */
+.dark div[class*="language-"] {
+  background-color: #0d0d12 !important;
+  border: 1px solid rgba(0, 204, 255, 0.15);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== 深度美化：按钮动效 ===== */
+.VPButton.brand {
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+  transition: all 0.2s ease;
+}
+.VPButton.brand:hover {
+  box-shadow: 0 0 25px rgba(0, 255, 204, 0.6);
+  transform: scale(1.05);
 }

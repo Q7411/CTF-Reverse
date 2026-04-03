@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/CTF-Reverse/',
+  base: '/',
   title: "Q7411's Blog",
   description: "CTF 与逆向工程学习记录",
   themeConfig: {

@@ -5,6 +5,9 @@ hero:
   name: "Q7411's Space"
   text: "探索二进制的奥秘"
   tagline: "专注于 CTF 逆向工程、安全研究与技术分享"
+  image:
+    src: https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Alien%20Monster.png
+    alt: Alien Monster
   actions:
     - theme: brand
       text: 开始阅读 🚀
