@@ -1,30 +1,182 @@
 <script setup>
-import { onMounted, ref, onUnmounted } from 'vue'
+import { onMounted, ref, onUnmounted, watch } from 'vue'
+import { useData } from 'vitepress'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+const { isDark } = useData()
+
 const heroRef = ref(null)
-const videoRef = ref(null)
+const bgCanvas = ref(null)
 const contentRef = ref(null)
-const featuresRef = ref(null)
 const skillsRef = ref(null)
 const statsRef = ref(null)
 const postsRef = ref(null)
-const ctaRef = ref(null)
 let ctx
+let canvasCtx
+let animationFrameId
+let particles = []
+const mouse = { x: null, y: null, radius: 150 }
+
+class Particle {
+  constructor(canvas) {
+    this.canvas = canvas
+    this.x = Math.random() * canvas.width
+    this.y = Math.random() * canvas.height
+    this.size = Math.random() * 2 + 1
+    this.baseX = this.x
+    this.baseY = this.y
+    this.density = (Math.random() * 20) + 1
+    this.vx = (Math.random() - 0.5) * 0.8
+    this.vy = (Math.random() - 0.5) * 0.8
+  }
+
+  draw() {
+    if (!canvasCtx) return
+    canvasCtx.fillStyle = isDark.value ? 'rgba(0, 229, 255, 0.8)' : 'rgba(10, 10, 11, 0.4)'
+    canvasCtx.beginPath()
+    canvasCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+    canvasCtx.closePath()
+    canvasCtx.fill()
+  }
+
+  update() {
+    this.x += this.vx
+    this.y += this.vy
+
+    // Bounce
+    if (this.x < 0 || this.x > this.canvas.width) this.vx *= -1
+    if (this.y < 0 || this.y > this.canvas.height) this.vy *= -1
+
+    // Mouse interaction
+    if (mouse.x != null && mouse.y != null) {
+      let dx = mouse.x - this.x
+      let dy = mouse.y - this.y
+      let distance = Math.sqrt(dx * dx + dy * dy)
+      
+      if (distance < mouse.radius) {
+        const forceDirectionX = dx / distance
+        const forceDirectionY = dy / distance
+        const force = (mouse.radius - distance) / mouse.radius
+        const directionX = forceDirectionX * force * this.density
+        const directionY = forceDirectionY * force * this.density
+        
+        this.x -= directionX
+        this.y -= directionY
+      }
+    }
+    this.draw()
+  }
+}
+
+const initParticles = () => {
+  particles = []
+  if (!bgCanvas.value) return
+  const numberOfParticles = window.innerWidth < 768 ? 50 : 120
+  for (let i = 0; i < numberOfParticles; i++) {
+    particles.push(new Particle(bgCanvas.value))
+  }
+}
+
+const animate = () => {
+  if (!canvasCtx || !bgCanvas.value) return
+  canvasCtx.clearRect(0, 0, bgCanvas.value.width, bgCanvas.value.height)
+  
+  for (let i = 0; i < particles.length; i++) {
+    particles[i].update()
+    
+    // Connect particles
+    for (let j = i; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x
+      const dy = particles[i].y - particles[j].y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      
+      if (distance < 150) {
+        canvasCtx.beginPath()
+        const opacity = 1 - (distance / 150)
+        canvasCtx.strokeStyle = isDark.value 
+          ? `rgba(0, 229, 255, ${opacity * 0.3})` 
+          : `rgba(10, 10, 11, ${opacity * 0.15})`
+        canvasCtx.lineWidth = 1
+        canvasCtx.moveTo(particles[i].x, particles[i].y)
+        canvasCtx.lineTo(particles[j].x, particles[j].y)
+        canvasCtx.stroke()
+        canvasCtx.closePath()
+      }
+    }
+  }
+  animationFrameId = requestAnimationFrame(animate)
+}
+
+const handleResize = () => {
+  if (!bgCanvas.value) return
+  bgCanvas.value.width = window.innerWidth
+  bgCanvas.value.height = window.innerHeight
+  initParticles()
+}
+
+const handleMouseMove = (event) => {
+  if (!heroRef.value) return
+  const rect = heroRef.value.getBoundingClientRect()
+  mouse.x = event.clientX - rect.left
+  mouse.y = event.clientY - rect.top
+}
+
+const handleMouseOut = () => {
+  mouse.x = null
+  mouse.y = null
+}
+
+const displayTitle1 = ref('欢迎来到我的博客')
+const displayTitle2 = ref('HELLO WORLD_')
+const displaySubtitle = ref('专注于 CTF 逆向工程、安全研究与技术分享，记录每一次在二进制世界中的探索与成长。')
+const cursor1 = ref(false)
+const cursor2 = ref(false)
+const cursor3 = ref(false)
+
+const typeWriter = (text, refVar, cursorVar, speed = 50) => {
+  return new Promise((resolve) => {
+    cursorVar.value = true
+    let i = 0
+    refVar.value = ''
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        refVar.value += text.charAt(i)
+        i++
+      } else {
+        clearInterval(timer)
+        cursorVar.value = false
+        resolve()
+      }
+    }, speed)
+  })
+}
 
 onMounted(() => {
-  // 确保视频内联播放
-  if (videoRef.value) {
-    videoRef.value.play().catch(e => console.log('Auto-play prevented:', e))
+  // 性能降级：移动端或偏好减少动画时不渲染粒子
+  if (!window.matchMedia('(max-width: 768px)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (bgCanvas.value) {
+      canvasCtx = bgCanvas.value.getContext('2d')
+      bgCanvas.value.width = window.innerWidth
+      bgCanvas.value.height = window.innerHeight
+      
+      initParticles()
+      animate()
+
+      window.addEventListener('resize', handleResize)
+      if (heroRef.value) {
+        heroRef.value.addEventListener('mousemove', handleMouseMove)
+        heroRef.value.addEventListener('mouseout', handleMouseOut)
+      }
+    }
   }
 
   // GSAP 视差动画
   ctx = gsap.context(() => {
-    // 英雄区视频视差滚动
-    gsap.to('.hero-video', {
+    // 英雄区 Canvas 视差滚动
+    gsap.to('.hero-canvas', {
       yPercent: 30,
       ease: 'none',
       scrollTrigger: {
@@ -49,23 +201,7 @@ onMounted(() => {
       { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out', delay: 0.8 }
     )
 
-    // 特性卡片视差滚动与错开入场
-    gsap.fromTo('.feature-card', 
-      { opacity: 0, y: 80, scale: 0.95 },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: 'back.out(1.2)',
-        scrollTrigger: {
-          trigger: featuresRef.value,
-          start: 'top 85%',
-          toggleActions: 'play none none reverse'
-        }
-      }
-    )
+
 
     // 技能标签入场动画
     gsap.fromTo('.skill-tag',
@@ -119,45 +255,34 @@ onMounted(() => {
       }
     )
 
-    // CTA 区域入场动画
-    gsap.fromTo('.cta-content',
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power4.out',
-        scrollTrigger: {
-          trigger: ctaRef.value,
-          start: 'top 85%',
-          toggleActions: 'play none none reverse'
-        }
-      }
-    )
+    // 动态打字机效果
+    displayTitle1.value = '\u200B'
+    displayTitle2.value = '\u200B'
+    displaySubtitle.value = '\u200B'
+
+    setTimeout(async () => {
+      await typeWriter('欢迎来到我的博客', displayTitle1, cursor1, 100)
+      await typeWriter('HELLO WORLD_', displayTitle2, cursor2, 80)
+      await typeWriter('专注于 CTF 逆向工程、安全研究与技术分享，记录每一次在二进制世界中的探索与成长。', displaySubtitle, cursor3, 40)
+      cursor3.value = true // 保持最后一个光标闪烁
+    }, 800)
+
   })
 })
 
 onUnmounted(() => {
   if (ctx) ctx.revert()
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+  }
+  window.removeEventListener('resize', handleResize)
+  if (heroRef.value) {
+    heroRef.value.removeEventListener('mousemove', handleMouseMove)
+    heroRef.value.removeEventListener('mouseout', handleMouseOut)
+  }
 })
 
-const features = [
-  {
-    title: '4K Ultra HD',
-    desc: '原生支持 4K 级超清素材，为 120Hz 高刷屏提供极致丝滑的微交互体验。',
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>`
-  },
-  {
-    title: 'Glassmorphism',
-    desc: '引入前沿玻璃拟态设计语言，配合光影渲染，带来深邃沉浸的视觉空间。',
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`
-  },
-  {
-    title: 'Performance',
-    desc: 'Lighthouse 95+ 评分，CLS <0.05，FID <50ms，性能优化无处不在。',
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`
-  }
-]
+
 
 const skills = [
   '逆向工程 (Reverse)', '二进制安全 (Pwn)', 'Web 安全渗透', '密码学 (Crypto)',
@@ -192,17 +317,7 @@ const recentPosts = [
     <!-- Hero Section -->
     <section ref="heroRef" class="hero-section">
       <div class="video-container">
-        <video 
-          ref="videoRef"
-          class="hero-video gpu-accel" 
-          autoplay 
-          loop 
-          muted 
-          playsinline
-          poster="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-        >
-          <source src="https://cdn.pixabay.com/video/2023/10/22/186115-877114413_large.mp4" type="video/mp4" />
-        </video>
+        <canvas ref="bgCanvas" class="hero-canvas gpu-accel"></canvas>
         <div class="video-overlay"></div>
       </div>
 
@@ -218,11 +333,11 @@ const recentPosts = [
           <span class="terminal-text">root@q7411:~# ./start_journey.sh</span>
         </div>
         <h1 class="hero-title gpu-accel">
-          <span class="gradient-text">极简未来视界</span><br/>
-          <span class="cyber-text" data-text="BINARY EXPLORATION">BINARY EXPLORATION</span>
+          <span class="liquid-text" :data-text="displayTitle1 === '\u200B' ? '' : displayTitle1">{{ displayTitle1 }}</span><span v-show="cursor1" class="typing-cursor">_</span><br/>
+          <span class="cyber-text" :data-text="displayTitle2 === '\u200B' ? '' : displayTitle2">{{ displayTitle2 }}</span><span v-show="cursor2" class="typing-cursor">_</span>
         </h1>
         <p class="hero-subtitle gpu-accel">
-          结合深色渐变、玻璃拟态与 3D 视差滚动，为您呈现 4K 级 120Hz 丝滑体验。
+          {{ displaySubtitle }}<span v-show="cursor3" class="typing-cursor">_</span>
         </p>
         <div class="hero-actions gpu-accel">
           <a href="/posts/first-post" class="btn btn-primary cyber-btn">
@@ -234,20 +349,7 @@ const recentPosts = [
       </div>
     </section>
 
-    <!-- Features Section -->
-    <section ref="featuresRef" class="features-section">
-      <div class="features-grid">
-        <div 
-          v-for="(feat, index) in features" 
-          :key="index"
-          class="feature-card glass-card gpu-accel"
-        >
-          <div class="icon-wrapper" v-html="feat.icon"></div>
-          <h3 class="feature-title">{{ feat.title }}</h3>
-          <p class="feature-desc">{{ feat.desc }}</p>
-        </div>
-      </div>
-    </section>
+
 
     <!-- Skills Section -->
     <section ref="skillsRef" class="skills-section">
@@ -306,21 +408,17 @@ const recentPosts = [
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section ref="ctaRef" class="cta-section">
-      <div class="cta-content glass-card gpu-accel">
-        <a href="/CTF-Reverse/BASE64" class="btn btn-primary cta-btn">开启极客之旅</a>
-      </div>
-    </section>
+
   </div>
 </template>
 
 <style scoped>
 .modern-home {
   width: 100%;
-  background-color: #0A0A0B; /* Force dark background */
-  color: #fff;
+  background-color: var(--vp-c-bg); /* Use theme background */
+  color: var(--vp-c-text-1);
   overflow: hidden;
+  transition: background-color 0.5s ease;
 }
 
 /* Hero Section */
@@ -340,13 +438,14 @@ const recentPosts = [
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--vp-c-divider) 1px, transparent 1px),
+    linear-gradient(90deg, var(--vp-c-divider) 1px, transparent 1px);
   background-size: 50px 50px;
   z-index: 1;
   pointer-events: none;
   mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  opacity: 0.5;
 }
 
 .ambient-orb {
@@ -394,7 +493,7 @@ const recentPosts = [
   right: 40px;
   font-family: var(--vp-font-family-mono);
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--vp-c-text-3);
   letter-spacing: 0.1em;
   z-index: 10;
 }
@@ -402,6 +501,13 @@ const recentPosts = [
 .status-online {
   color: var(--vp-c-cyan-1);
   text-shadow: 0 0 10px var(--vp-c-cyan-soft);
+}
+
+.typing-cursor {
+  display: inline-block;
+  color: var(--vp-c-brand-1);
+  animation: blink 1s step-end infinite;
+  font-weight: bold;
 }
 
 .blink {
@@ -415,13 +521,13 @@ const recentPosts = [
 .terminal-badge {
   display: inline-flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--vp-c-bg-soft);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--vp-c-divider);
   padding: 8px 20px;
   border-radius: 8px;
   margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .terminal-dot {
@@ -434,7 +540,7 @@ const recentPosts = [
 .terminal-text {
   font-family: var(--vp-font-family-mono);
   font-size: 0.9rem;
-  color: #a9b1d6;
+  color: var(--vp-c-text-2);
 }
 
 .video-container {
@@ -446,13 +552,13 @@ const recentPosts = [
   z-index: 0;
 }
 
-.hero-video {
+.hero-canvas {
   width: 100%;
   height: 120%; /* 留出视差滚动空间 */
-  object-fit: cover;
   position: absolute;
   top: -10%;
   left: 0;
+  pointer-events: none;
 }
 
 .video-overlay {
@@ -463,11 +569,12 @@ const recentPosts = [
   height: 100%;
   background: linear-gradient(
     to bottom,
-    rgba(10, 10, 11, 0.4) 0%,
-    rgba(10, 10, 11, 0.8) 70%,
-    rgba(10, 10, 11, 1) 100%
+    var(--vp-c-bg-soft) 0%,
+    var(--vp-c-bg) 100%
   );
+  opacity: 0.6;
   z-index: 1;
+  pointer-events: none;
 }
 
 .hero-content {
@@ -482,17 +589,81 @@ const recentPosts = [
   font-family: var(--vp-font-family-base);
   font-size: clamp(3.5rem, 8vw, 6rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.3;
   letter-spacing: -0.04em;
   margin-bottom: 24px;
-  color: #fff;
+  color: var(--vp-c-text-1);
+  padding: 10px 0;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #fff 30%, var(--vp-c-brand-1) 100%);
+.liquid-text {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--vp-c-text-2); /* 镂空文字的描边 */
+  padding-bottom: 0.1em;
+  z-index: 1;
+}
+
+/* 基础水波层配置：利用多重背景叠加和动画实现不规则真实海浪 */
+.liquid-text::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-text-stroke: 0px transparent;
+  color: transparent;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
+  background-clip: text;
+  
+  /* 多重 SVG 海浪背景层叠 */
+  background-image: 
+    /* 前浪 - 亮青色，高频小浪 */
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><path d="M0,1000 L0,250 Q150,150 250,250 T500,250 T750,250 T1000,250 L1000,1000 Z" fill="%2300e5ff" opacity="0.8"/></svg>'),
+    /* 中浪 - 品牌蓝，中频中浪 */
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><path d="M0,1000 L0,280 Q200,380 350,280 T700,280 T1000,280 L1000,1000 Z" fill="%233498db" opacity="0.6"/></svg>'),
+    /* 底浪 - 深海蓝，低频大浪 */
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none"><path d="M0,1000 L0,300 Q250,100 500,300 T1000,300 L1000,1000 Z" fill="%231a5276" opacity="0.9"/></svg>');
+  
+  /* 分别设置三个海浪的尺寸：使其周期不同，打破规律感 */
+  background-size: 50% 100%, 75% 100%, 120% 100%;
+  background-repeat: repeat-x, repeat-x, repeat-x;
+  
+  /* 让文字本身成为这三层海浪的蒙版 */
+  animation: oceanSurge 8s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite alternate,
+             oceanFlow 12s linear infinite;
+  z-index: 2;
+}
+
+/* 横向流动（不同层速度不同） */
+@keyframes oceanFlow {
+  0% {
+    background-position: 0% 100%, 0% 100%, 0% 100%;
+  }
+  100% {
+    background-position: -100% 100%, -150% 100%, 50% 100%;
+  }
+}
+
+/* 纵向非规则翻涌（模拟潮汐的上下拍打、挤压变形） */
+@keyframes oceanSurge {
+  0% {
+    background-size: 50% 90%, 75% 95%, 120% 100%;
+  }
+  25% {
+    background-size: 55% 110%, 80% 90%, 110% 105%;
+  }
+  50% {
+    background-size: 60% 85%, 70% 115%, 130% 95%;
+  }
+  75% {
+    background-size: 45% 105%, 85% 85%, 115% 110%;
+  }
+  100% {
+    background-size: 50% 100%, 75% 100%, 120% 90%;
+  }
 }
 
 .cyber-text {
@@ -503,11 +674,12 @@ const recentPosts = [
   position: relative;
   display: inline-block;
   letter-spacing: 0.1em;
+  padding-bottom: 0.1em;
 }
 
 .hero-subtitle {
   font-size: clamp(1.2rem, 3vw, 1.5rem);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--vp-c-text-2);
   max-width: 600px;
   margin: 0 auto 48px;
   line-height: 1.6;
@@ -534,7 +706,7 @@ const recentPosts = [
 
 .btn-primary {
   background-color: var(--vp-c-brand-1);
-  color: #0A0A0B;
+  color: #0A0A0B; /* Text always dark on brand button */
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
 }
 
@@ -545,94 +717,18 @@ const recentPosts = [
 }
 
 .btn-secondary {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background-color: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--vp-c-divider);
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--vp-c-bg-mute);
   transform: translateY(-4px);
 }
 
-/* Features Section */
-.features-section {
-  position: relative;
-  padding: 120px 24px;
-  max-width: 1280px;
-  margin: 0 auto;
-  z-index: 2;
-  margin-top: -100px; /* Overlap with hero slightly */
-}
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 32px;
-}
-
-.feature-card {
-  padding: 48px 32px;
-  border-radius: 24px;
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  background: rgba(18, 18, 20, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
-  position: relative;
-}
-
-/* Tech Corners for Feature Cards */
-.feature-card::before, .feature-card::after {
-  content: '';
-  position: absolute;
-  width: 20px; height: 20px;
-  transition: all 0.3s ease;
-  opacity: 0.3;
-}
-.feature-card::before {
-  top: 10px; left: 10px;
-  border-top: 2px solid var(--vp-c-cyan-1);
-  border-left: 2px solid var(--vp-c-cyan-1);
-}
-.feature-card::after {
-  bottom: 10px; right: 10px;
-  border-bottom: 2px solid var(--vp-c-cyan-1);
-  border-right: 2px solid var(--vp-c-cyan-1);
-}
-
-.feature-card:hover::before { top: 5px; left: 5px; opacity: 1; }
-.feature-card:hover::after { bottom: 5px; right: 5px; opacity: 1; }
-
-.feature-card:hover {
-  transform: translateY(-10px) scale(1.02) !important;
-  border-color: rgba(212, 175, 55, 0.5) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(212, 175, 55, 0.15) inset !important;
-}
-
-.icon-wrapper {
-  color: var(--vp-c-brand-1);
-  margin-bottom: 24px;
-  transition: transform 0.5s ease;
-}
-
-.feature-card:hover .icon-wrapper {
-  transform: scale(1.1);
-}
-
-.feature-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #fff;
-  letter-spacing: -0.02em;
-}
-
-.feature-desc {
-  font-size: 1.05rem;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.6);
-}
 
 /* Section Title */
 .section-title {
@@ -640,11 +736,13 @@ const recentPosts = [
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 800;
   margin-bottom: 60px;
-  color: #fff;
+  color: var(--vp-c-text-1);
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #fff 50%, rgba(255,255,255,0.4));
+  background: linear-gradient(135deg, var(--vp-c-text-1) 50%, var(--vp-c-text-3));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  line-height: 1.3;
+  padding-bottom: 0.1em;
 }
 
 /* Skills Section */
@@ -662,13 +760,13 @@ const recentPosts = [
 }
 
 .skill-tag {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
   padding: 12px 24px;
   border-radius: 100px;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--vp-c-text-1);
   transition: all 0.3s ease;
   cursor: default;
 }
@@ -685,8 +783,8 @@ const recentPosts = [
   padding: 40px 24px;
   max-width: 1000px;
   margin: 0 auto;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  border-top: 1px dashed var(--vp-c-divider);
+  border-bottom: 1px dashed var(--vp-c-divider);
 }
 
 .stats-grid {
@@ -714,7 +812,7 @@ const recentPosts = [
 .stat-label {
   font-size: 0.85rem;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--vp-c-text-2);
   font-family: var(--vp-font-family-mono);
 }
 
@@ -737,8 +835,8 @@ const recentPosts = [
   padding: 40px 32px;
   border-radius: 20px;
   transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  background: rgba(18, 18, 20, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: var(--vp-c-bg-soft) !important;
+  border: 1px solid var(--vp-c-divider) !important;
   position: relative;
   overflow: hidden;
 }
@@ -759,8 +857,8 @@ const recentPosts = [
 
 .post-card:hover {
   transform: translateY(-8px) !important;
-  border-color: rgba(0, 229, 255, 0.3) !important;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 229, 255, 0.1) inset !important;
+  border-color: var(--vp-c-brand-1) !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
 .post-meta {
@@ -768,7 +866,7 @@ const recentPosts = [
   justify-content: space-between;
   font-size: 0.85rem;
   margin-bottom: 16px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--vp-c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -781,7 +879,7 @@ const recentPosts = [
 .post-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--vp-c-text-1);
   margin-bottom: 12px;
   line-height: 1.4;
   transition: color 0.3s ease;
@@ -793,7 +891,7 @@ const recentPosts = [
 
 .post-excerpt {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--vp-c-text-2);
   line-height: 1.6;
   margin-bottom: 24px;
 }
@@ -807,26 +905,6 @@ const recentPosts = [
   gap: 8px;
 }
 
-/* CTA Section */
-.cta-section {
-  padding: 100px 24px 160px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.cta-content {
-  text-align: center;
-  padding: 60px 40px;
-  border-radius: 32px;
-  background: linear-gradient(145deg, rgba(20, 20, 22, 0.8), rgba(10, 10, 11, 0.9)) !important;
-  border: 1px solid rgba(212, 175, 55, 0.2) !important;
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 80px rgba(212, 175, 55, 0.1) inset !important;
-}
-
-.cta-btn {
-  font-size: 1.2rem;
-  padding: 18px 48px;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
